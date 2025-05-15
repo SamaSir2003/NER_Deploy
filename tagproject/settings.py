@@ -49,7 +49,8 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-ALLOWED_HOSTS = []
+# Update ALLOWED_HOSTS
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ner-deploy.onrender.com', '.onrender.com', os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')]
 
 
 # Application definition

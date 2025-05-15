@@ -15,23 +15,39 @@ from pathlib import Path
 
 import os
 
+import dj_database_url
+
 MEDIA_URL = '/'
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-MEDIA_ROOT = os.path.join(BASE_DIR, '')
-RESULTS_DIR = os.path.join(BASE_DIR, 'tagproject', 'results')
+BASE_FILES_DIR = os.environ.get('RENDER_FILES_DIR', os.path.join(BASE_DIR, 'tagproject'))
 
+# Specific directories
+RESULTS_DIR = os.path.join(BASE_FILES_DIR, 'results')
+TEXT_FILES_DIR = os.path.join(BASE_FILES_DIR, 'text_files')
+TEXT_FILES_MED_DIR = os.path.join(BASE_FILES_DIR, 'text_files_med')
+UPLOAD_DIR = TEXT_FILES_DIR
+
+# Ensure directories exist on startup
+for directory in [RESULTS_DIR, TEXT_FILES_DIR, TEXT_FILES_MED_DIR]:
+    os.makedirs(directory, exist_ok=True)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-jx@%at4ev*09a_0ui1z7iw0+*tu629r_1oxy$8i0ygq72btp8h'
+SECRET_KEY = os.environ.get('SECRET_KEY','django-insecure-jx@%at4ev*09a_0ui1z7iw0+*tu629r_1oxy$8i0ygq72btp8h')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = 'RENDER' not in os.environ
+
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 ALLOWED_HOSTS = []
 
@@ -83,15 +99,20 @@ WSGI_APPLICATION = 'tagproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'ner_db',
+#         'USER': 'ner_user',
+#         'PASSWORD': 'root',
+#         'HOST': 'localhost',  # Change if using a remote database
+#         'PORT': '5433',
+#     }
+# }
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ner_db',
-        'USER': 'ner_user',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',  # Change if using a remote database
-        'PORT': '5433',
-    }
+    'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
 }
 
 # Password validation
@@ -132,7 +153,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
